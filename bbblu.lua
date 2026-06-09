@@ -76,7 +76,7 @@ end)
 
 windower.register_event('prerender', function()
     local now = os.clock()
-    if now - last_radar_update > 1.0 then
+    if now - last_radar_update > 2 then
         last_radar_update = now
         radar:update_radar(zoning_bool, db_cache)
     end
