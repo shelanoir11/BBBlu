@@ -48,7 +48,7 @@ local function group_mobs(nearby_mobs, db_cache)
     for _, mob in pairs(nearby_mobs) do
         local is_monster, is_valid, is_alive = get_mob_info(mob)
 
-        if is_monster and is_valid and is_alive and db_cache[mob.name] and not ignored_mobs[mob.name] then
+        if is_monster and is_valid and is_alive and db_cache[mob.name] then
             local mob_data = utility.compiled_strings[mob.name]
 
             local should_display = false
