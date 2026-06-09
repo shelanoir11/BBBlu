@@ -77,7 +77,7 @@ local function display_top_ten_closest(player_loc)
 
         local dir = utility:get_compass_dir(player_loc.x, player_loc.y, m.x, m.y)
 
-        radar_lines:append(string.format(" %s [%dy %s] -> %s", name_str, math_sqrt(m.distance), dir, m.spells))
+        radar_lines:append(string.format(" %s [%dy %s] -> %s", name_str, math.sqrt(m.distance), dir, m.spells))
     end
 end
 
