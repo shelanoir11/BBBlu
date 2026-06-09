@@ -29,6 +29,27 @@ local function get_mob_info(mob)
     return is_monster, is_valid, is_alive
 end
 
+local function add_to_grouped_mobs(mob, mob_data)
+    if not grouped_mobs[mob.name] then
+        grouped_mobs[mob.name] ={
+            name = mob.name,
+            count = 1,
+            distance = mob.distance,
+            x = mob.x,
+            y = mob.y,
+            spells = mob_data.spells_string
+        }
+    else
+        grouped_mobs[mob.name].count = grouped_mobs[mob.name].count + 1
+        local dist = mob.distance
+        if dist < grouped_mobs[mob.name].distance then
+            grouped_mobs[mob.name].distance = dist
+            grouped_mobs[mob.name].x = mob.x
+            grouped_mobs[mob.name].y = mob.y
+        end
+    end
+end
+
 local function group_mobs(nearby_mobs, db_cache)
     for _, mob in pairs(nearby_mobs) do
         local is_monster, is_valid, is_alive = get_mob_info(mob)
@@ -43,24 +64,7 @@ local function group_mobs(nearby_mobs, db_cache)
             end
 
             if should_display then
-                if not grouped_mobs[mob.name] then
-                    grouped_mobs[mob.name] ={
-                        name = mob.name,
-                        count = 1,
-                        distance = mob.distance,
-                        x = mob.x,
-                        y = mob.y,
-                        spells = mob_data.spells_string
-                    }
-                else
-                    grouped_mobs[mob.name].count = grouped_mobs[mob.name].count + 1
-                    local dist = mob.distance
-                    if dist < grouped_mobs[mob.name].distance then
-                        grouped_mobs[mob.name].distance = dist
-                        grouped_mobs[mob.name].x = mob.x
-                        grouped_mobs[mob.name].y = mob.y
-                    end
-                end
+                add_to_grouped_mobs(mob, mob_data)
             else
                 ignored_mobs[mob.name] = true
             end
@@ -68,8 +72,9 @@ local function group_mobs(nearby_mobs, db_cache)
     end
 end
 
-local function display_top_ten(player_loc)
-    local display_count = math_min(10, #valid_mobs) -- limit to 10 unique mob types
+local function display_top_ten_closest(player_loc)
+    valid_mobs:sort(function(a, b) return a.distance < b.distance end)
+    local display_count = math_min(10, #valid_mobs)
 
     for i = 1, display_count do
         local m = valid_mobs[i]
@@ -82,6 +87,19 @@ local function display_top_ten(player_loc)
 
         radar_lines:append(string_format(" %s [%dy %s] -> %s", name_str, math_sqrt(m.distance), dir, m.spells))
     end
+end
+
+local function display_settings_all_false()
+    radar_lines:append("\\cs(255,100,100)  All radar tracking is disabled\\cr")
+    radar_lines:append("\\cs(255,100,100)  Check your settings.xml\\cr")
+    radar_box:text(radar_lines:concat('\n'))
+    radar_box:show()
+end
+
+local function display_no_targets()
+    radar_lines:append(" \\cs(180,180,180)No unlearned targets nearby.\\cr")
+    radar_box:text(radar_lines:concat('\n'))
+    radar_box:show()
 end
 
 function radar:update_radar(zoning_bool, db_cache)
@@ -103,13 +121,9 @@ function radar:update_radar(zoning_bool, db_cache)
     radar_lines:append(string_format("\\cs(255,225,125)  Nearby Learnable Blue Magic\\cr"))
     radar_lines:append("\\cs(100,100,100)---------------------------------------\\cr")
 
-
     -- in case someone flags both as false on accident
     if not track_learnable and not track_unlearnable then
-        radar_lines:append("\\cs(255,100,100)  All radar tracking is disabled\\cr")
-        radar_lines:append("\\cs(255,100,100)  Check your settings.xml\\cr")
-        radar_box:text(radar_lines:concat('\n'))
-        radar_box:show()
+        display_settings_all_false()
         return
     end
 
@@ -122,15 +136,11 @@ function radar:update_radar(zoning_bool, db_cache)
     end
 
     if #valid_mobs == 0 then
-        radar_lines:append(" \\cs(180,180,180)No unlearned targets nearby.\\cr")
-        radar_box:text(radar_lines:concat('\n'))
-        radar_box:show()
+        display_no_targets()
         return
     end
 
-    valid_mobs:sort(function(a, b) return a.distance < b.distance end)
-
-    display_top_ten(player_loc)
+    display_top_ten_closest(player_loc)
 
     radar_box:text(radar_lines:concat('\n'))
     radar_box:show()
