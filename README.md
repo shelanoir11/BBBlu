@@ -11,6 +11,7 @@
 - **Job-Aware Visibility:** Stays invisible and out of the way unless your main or sub-job is Blue Mage (`BLU`) and have a monster targeted.
 - **Customizable UI:** Adjustable overlay featuring custom text borders, positions, fonts, backgrounds, and specific colors for both learned and unlearned spells.
 - **Blue Mage Skill Display:** Shows the minimum Blue Magic Skill required to learn the spell next to the spell name.
+- **Spell Learned Audio Alert:** When you learn a new spell, alerts you audibly so that you don't have to search through your chat box to find out.
 
 ---
 
