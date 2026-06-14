@@ -1,16 +1,14 @@
 local texts = require('texts')
 local utility = require('utility')
-local defaults = require('defaults')
-local config = require('config')
+local settings = utility.settings
 
-local settings = config.load(defaults)
 local get_mob_array = windower.ffxi.get_mob_array
 local get_mob_by_target = windower.ffxi.get_mob_by_target
 local track_learnable = settings.radar.track_learnable
 local track_unlearnable = settings.radar.track_unlearnable
 
-local radar = { visible = false }
-local radar_box = texts.new("", settings.radar, settings)
+local radar = { visible = settings.show_radar }
+local radar_box = texts.new(settings.radar, settings)
 
 local radar_lines = T{}
 local grouped_mobs = {}

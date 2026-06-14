@@ -1,8 +1,10 @@
 local res = require('resources')
-local sqlite3=  require('sqlite3')
-local string_format = string.format
+local sqlite3 = require('sqlite3')
+local config = require('config')
+local defaults = require('defaults')
 
 local utility = {}
+utility.settings = config.load(defaults)
 local db
 
 local blu_spells = res.spells:type('BlueMagic')
@@ -42,10 +44,10 @@ function utility:compile_mob_strings(db_cache, settings)
 
                 if is_skill_locked then
                     has_unlearnable = true
-                    table.insert(unlearned_spells, string_format("\\cs(%d,%d,%d)%s\\cr", c_cant_learn.red, c_cant_learn.green, c_cant_learn.blue, spell.name))
+                    table.insert(unlearned_spells, string.format("\\cs(%d,%d,%d)%s\\cr", c_cant_learn.red, c_cant_learn.green, c_cant_learn.blue, spell.name))
                 else
                     has_learnable = true
-                    table.insert(unlearned_spells, string_format("\\cs(%d,%d,%d)%s\\cr", c_unlearned.red, c_unlearned.green, c_unlearned.blue, spell.name))
+                    table.insert(unlearned_spells, string.format("\\cs(%d,%d,%d)%s\\cr", c_unlearned.red, c_unlearned.green, c_unlearned.blue, spell.name))
                 end
             end
         end
@@ -78,6 +80,7 @@ end
 -- preload the database
 function utility:preload_database()
     local db_cache = {}
+    local db_cache_by_location = {}
     db = sqlite3.open(windower.addon_path..'/database.db')
 
     local spell_name_to_id = {}
@@ -86,33 +89,66 @@ function utility:preload_database()
     end
 
     local stmt = db:prepare([[
-        SELECT m.name AS mob_name, s.name AS spell_name, s.min_blue_skill
+        SELECT m.name AS mob_name, s.name AS spell_name, s.min_blue_skill, l.name as location_name
         FROM spells s
         JOIN monster_spells ms ON s.id = ms.spell_id
         JOIN monsters m on m.id = ms.monster_id
+        JOIN monster_locations ml on m.id = ml.monster_id
+        JOIN locations l on l.id = ml.location_id
     ]])
-
-    if not stmt then return end
 
     for row in stmt:nrows() do
         if not db_cache[row.mob_name] then
             db_cache[row.mob_name] = T{}
         end
-
         local true_spell_id = spell_name_to_id[row.spell_name]
-        db_cache[row.mob_name]:append({
-            name = row.spell_name,
-            min_blue_skill = row.min_blue_skill,
-            id = true_spell_id
-        })
+        
+        local already_has_spell = false
+        for _, spell in ipairs(db_cache[row.mob_name]) do
+            if spell.id == true_spell_id then
+                already_has_spell = true
+                break
+            end
+        end
+
+        if not already_has_spell then
+            db_cache[row.mob_name]:append({
+                name = row.spell_name,
+                min_blue_skill = row.min_blue_skill,
+                id = true_spell_id
+            })
+        end
+
+        if row.location_name then
+            if not db_cache_by_location[row.location_name] then
+                db_cache_by_location[row.location_name] = T{}
+            end
+            
+            local loc_has_spell = false
+            for _, entry in ipairs(db_cache_by_location[row.location_name]) do
+                if entry.mob_name == row.mob_name and entry.spell_name == row.spell_name then
+                    loc_has_spell = true
+                    break
+                end
+            end
+            
+            if not loc_has_spell then
+                db_cache_by_location[row.location_name]:append({
+                    mob_name = row.mob_name,
+                    spell_name = row.spell_name,
+                    min_blue_skill = row.min_blue_skill,
+                    id = true_spell_id
+                })
+            end
+        end
     end
     stmt:finalize()
-
-    if db and db:isopen() then -- everything is in memory, so we can close the connection
+    
+    if db and db:isopen() then
         db:close()
     end
 
-    return db_cache
+    return db_cache, db_cache_by_location
 end
 
 return utility
