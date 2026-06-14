@@ -34,7 +34,6 @@ function location_info:get_info(zoning_bool, db_cache_by_location)
     
     local current_zone = res.zones[info.zone].english
     current_zone = current_zone:gsub("%[S%]", "%(S%)")
-    windower.add_to_chat(207, current_zone)
 
     location_lines:append(string.format("\\cs(255,225,125)  %s Blue Magic\\cr", current_zone))
     location_lines:append("\\cs(100,100,100)---------------------------------------\\cr")
@@ -46,7 +45,6 @@ function location_info:get_info(zoning_bool, db_cache_by_location)
 
     local zone_data = db_cache_by_location[current_zone]
 
-    -- If no data for this zone, show a blank state
     if not zone_data or #zone_data == 0 then
         location_lines:append(" \\cs(180,180,180)No learnable spells in this zone.\\cr")
         location_box:text(location_lines:concat('\n'))
@@ -63,7 +61,6 @@ function location_info:get_info(zoning_bool, db_cache_by_location)
     local spells_in_zone = {}
     local ordered_spells = T{}
 
-    -- Process the zone cache to filter knowns and group by spell
     for _, entry in ipairs(zone_data) do
         if entry.id and not known_spells[entry.id] then
             local is_skill_locked = entry.min_blue_skill > blue_skill_level
@@ -79,7 +76,6 @@ function location_info:get_info(zoning_bool, db_cache_by_location)
                     ordered_spells:append(entry.spell_name)
                 end
                 
-                -- Prevent duplicate mob names on the same spell
                 if not spells_in_zone[entry.spell_name].mobs:contains(entry.mob_name) then
                     spells_in_zone[entry.spell_name].mobs:append(entry.mob_name)
                 end
@@ -94,7 +90,6 @@ function location_info:get_info(zoning_bool, db_cache_by_location)
         return
     end
 
-    -- Build the UI lines
     for _, spell_name in ipairs(ordered_spells) do
         local s_data = spells_in_zone[spell_name]
         local c = s_data.is_locked and c_cant_learn or c_unlearned
