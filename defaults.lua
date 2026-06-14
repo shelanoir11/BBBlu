@@ -1,4 +1,6 @@
 defaults = {}
+defaults.show_radar = true
+defaults.show_location = true
 defaults.display = {}
 defaults.display.pos = {}
 defaults.display.pos.x = 0
@@ -23,7 +25,7 @@ defaults.display.text.red = 255
 defaults.display.text.green = 255
 defaults.display.text.blue = 255
 defaults.display.text.alpha = 255
-defaults.display.text.size = 11
+defaults.display.text.size = 10
 
 -- adds a 1-pixel black outline to all text for readability
 defaults.display.text.stroke = {}
@@ -39,5 +41,12 @@ defaults.radar.pos.x = 300
 defaults.radar.pos.y = 200
 defaults.radar.track_learnable = true
 defaults.radar.track_unlearnable = true
+
+-- location settings
+defaults.location = table.copy(defaults.display)
+defaults.location.pos.x = 500 
+defaults.location.pos.y = 200
+defaults.location.track_learnable = true
+defaults.location.track_unlearnable = true
 
 return defaults

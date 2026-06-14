@@ -1,14 +1,11 @@
 local texts = require('texts')
-local defaults = require('defaults')
-local config = require('config')
-local settings = config.load(defaults)
 local utility = require('utility')
-local string_format = string.format
+local settings = utility.settings
 
 local target_spells = {}
 target_spells.visible = false
 
-local box = texts.new("", settings.display, settings)
+local box = texts.new(settings.display, settings)
 
 function target_spells:get_spells(target_name, db_cache)
     if not db_cache[target_name] then
@@ -17,7 +14,7 @@ function target_spells:get_spells(target_name, db_cache)
     end
 
     local lines = T{}
-    lines:append(string_format("\\cs(255,225,125)  Learnable Blue Magic\\cr"))
+    lines:append(string.format("\\cs(255,225,125)  Learnable Blue Magic\\cr"))
     lines:append("\\cs(100,100,100)---------------------------------------\\cr")
     
     -- fetch the player's known spells
@@ -31,17 +28,30 @@ function target_spells:get_spells(target_name, db_cache)
     local c_unlearned = settings.colors.unlearned
     local c_cant_learn = settings.colors.cant_learn
 
+    local listed_spells = T{}
+
     for _, row in ipairs(db_cache[target_name] or {}) do
         found = true
-        if row.id and known_spells[row.id] then
-            -- learned spells: uses the custom 'learned' color
-            lines:append(string_format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_learned.red, c_learned.green, c_learned.blue, row.name, row.min_blue_skill))
-        elseif row.min_blue_skill > blue_skill_level then
-            -- can't learn yet: uses the custom 'can't learn' color
-            lines:append(string_format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_cant_learn.red, c_cant_learn.green, c_cant_learn.blue, row.name, row.min_blue_skill))
-        else
-            -- unlearned spells: uses the custom 'unlearned' color
-            lines:append(string_format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_unlearned.red, c_unlearned.green, c_unlearned.blue, row.name, row.min_blue_skill))
+        local is_already_listed = false
+        for _, listed in ipairs(listed_spells) do
+            if row.id == listed then
+                is_already_listed = true
+            end
+        end
+        if not is_already_listed then
+            if row.id and known_spells[row.id] then
+                -- learned spells: uses the custom 'learned' color
+                lines:append(string.format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_learned.red, c_learned.green, c_learned.blue, row.name, row.min_blue_skill))
+            elseif row.min_blue_skill > blue_skill_level then
+                -- can't learn yet: uses the custom 'can't learn' color
+                lines:append(string.format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_cant_learn.red, c_cant_learn.green, c_cant_learn.blue, row.name, row.min_blue_skill))
+            else
+                -- unlearned spells: uses the custom 'unlearned' color
+                lines:append(string.format("\\cs(%d,%d,%d)  %s (Skill: %d+)\\cr", c_unlearned.red, c_unlearned.green, c_unlearned.blue, row.name, row.min_blue_skill))
+            end
+        end
+        if row.id then
+            listed_spells:append(row.id)
         end
     end
 
